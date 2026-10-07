@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>SafeHer — Online Safety Companion</title>
+<meta name="theme-color" content="#0F1B2E">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0F1B2E;
+    --panel: #182A47;
+    --panel-light: #223357;
+    --line: #2B3E5E;
+    --coral: #FF5A4E;
+    --coral-dim: #4A2621;
+    --mint: #5FD8B8;
+    --mint-dim: #17332C;
+    --amber: #F4A259;
+    --text: #F3F1EC;
+    --muted: #8FA0B8;
+    --radius-lg: 22px;
+    --radius-sm: 10px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{height:100%; margin:0;}
+  body{
+    background: #070D18;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    display:flex;
+    justify-content:center;
+    min-height: 100vh;
+  }
+  #app{
+    width:100%;
+    max-width:430px;
+    min-height:100vh;
+    background: var(--bg);
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,.brand{ font-family:'Sora', sans-serif; }
+  .screen{ padding: 22px 20px 100px; flex:1; animation: fadeIn .25s ease; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  /* ---- Top bar ---- */
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 18px 20px 6px;
+  }
+  .topbar .greet{ font-size:13px; color:var(--muted); }
+  .topbar h1{ font-size:22px; margin:2px 0 0; font-weight:700; }
+  .back-btn{
+    width:38px;height:38px;border-radius:50%;background:var(--panel);
+    display:flex;align-items:center;justify-content:center; border:none; color:var(--text); font-size:18px; cursor:pointer;
+  }
+  .status-pill{
+    display:inline-flex; align-items:center; gap:6px;
+    background: var(--mint-dim); color:var(--mint);
+    padding:6px 12px; border-radius:20px; font-size:12px; font-weight:600;
+  }
+  .status-pill .dot{width:7px;height:7px;border-radius:50%;background:var(--mint);}
+
+  /* ---- Auth screens ---- */
+  .auth-wrap{ padding: 60px 26px 40px; display:flex; flex-direction:column; min-height:100vh; }
+  .auth-mark{
+    width:60px;height:60px;border-radius:18px;background:var(--panel);
+    display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:22px;
+    border:1.5px solid var(--mint);
+  }
+  .auth-wrap h1{ font-size:30px; line-height:1.15; margin:0 0 6px; }
+  .auth-wrap p.sub{ color:var(--muted); font-size:14.5px; margin:0 0 30px; }
+  label{ font-size:13px; color:var(--muted); font-weight:600; display:block; margin:16px 0 6px; }
+  input[type=text], input[type=email], input[type=password], input[type=tel], textarea, select{
+    width:100%; background:var(--panel); border:1.5px solid var(--line); color:var(--text);
+    padding:14px 15px; border-radius:var(--radius-sm); font-size:15px; font-family:inherit;
+    outline:none;
+  }
+  input:focus, textarea:focus, select:focus{ border-color: var(--mint); }
+  textarea{ resize:vertical; min-height:90px; }
+  .btn{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    width:100%; padding:15px; border-radius:14px; border:none; font-family:'Sora';
+    font-weight:600; font-size:15.5px; cursor:pointer; margin-top:22px;
+  }
+  .btn-primary{ background: var(--mint); color:#08281F; }
+  .btn-primary:active{ transform: scale(.98); }
+  .btn-outline{ background:transparent; border:1.5px solid var(--line); color:var(--text); }
+  .btn-danger{ background:var(--coral); color:#fff; }
+  .switch-line{ text-align:center; color:var(--muted); font-size:14px; margin-top:22px; }
+  .switch-line a{ color:var(--mint); text-decoration:none; font-weight:600; cursor:pointer; }
+  .err{ color:var(--coral); font-size:13px; margin-top:10px; min-height:16px; }
+
+  /* ---- Dashboard ---- */
+  .safety-card{
+    background: linear-gradient(135deg, var(--panel), var(--panel-light));
+    border-radius: var(--radius-lg); padding:20px; margin-top:16px;
+    border:1px solid var(--line);
+  }
+  .safety-card .row{ display:flex; justify-content:space-between; align-items:center; }
+  .safety-card h3{ margin:0 0 4px; font-size:16px; }
+  .safety-card p{ margin:0; color:var(--muted); font-size:13px; }
+
+  .section-title{ font-size:14px; text-transform:none; color:var(--muted); margin:26px 0 12px; font-weight:600; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .tile{
+    background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    padding:16px 14px; cursor:pointer; text-decoration:none; color:var(--text); display:block;
+  }
+  .tile .ic{ font-size:22px; margin-bottom:10px; display:block; }
+  .tile .lbl{ font-size:13.5px; font-weight:600; line-height:1.25; }
+  .tile .sub{ font-size:11.5px; color:var(--muted); margin-top:3px; display:block; }
+
+  .list-row{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding:14px 16px; margin-bottom:10px; cursor:pointer;
+  }
+  .list-row .main{ flex:1; }
+  .list-row .main .t{ font-weight:600; font-size:14.5px; }
+  .list-row .main .d{ font-size:12.5px; color:var(--muted); margin-top:2px; }
+  .chev{ color:var(--muted); font-size:16px; }
+
+  /* ---- Floating SOS ---- */
+  .fab-sos{
+    position:fixed; bottom:92px; left:50%; transform:translateX(-50%);
+    width:64px; height:64px; border-radius:50%;
+    background: var(--coral); color:#fff; border:4px solid #2a0e0b;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Sora'; font-weight:800; font-size:13px;
+    box-shadow: 0 8px 24px rgba(255,90,78,.45);
+    z-index:40; cursor:pointer; max-width:430px;
+  }
+
+  /* ---- Bottom nav ---- */
+  .bottom-nav{
+    position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+    width:100%; max-width:430px; background:#0B1524;
+    border-top:1px solid var(--line); display:flex; z-index:35;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .nav-btn{
+    flex:1; background:none; border:none; color:var(--muted); padding:12px 4px 10px;
+    display:flex; flex-direction:column; align-items:center; gap:4px; font-size:10.5px; font-family:'Inter'; cursor:pointer;
+  }
+  .nav-btn .nic{ font-size:19px; }
+  .nav-btn.active{ color: var(--mint); }
+
+  /* ---- SOS screen ---- */
+  .sos-screen{ display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:40px 24px; text-align:center; }
+  .sos-ring{
+    width:220px; height:220px; border-radius:50%;
+    background: radial-gradient(circle, var(--coral) 0%, #B23A31 100%);
+    display:flex; align-items:center; justify-content:center; flex-direction:column;
+    font-family:'Sora'; font-weight:800; color:#fff; margin:30px 0; cursor:pointer;
+    box-shadow: 0 0 0 10px rgba(255,90,78,.15), 0 0 0 22px rgba(255,90,78,.08);
+    user-select:none;
+  }
+  .sos-ring span{ font-size:22px; }
+  .sos-ring small{ font-weight:500; font-size:12px; margin-top:6px; opacity:.85; }
+  .sos-sent{ }
+  .sos-sent .check{ font-size:52px; }
+
+  /* ---- Learn accordion ---- */
+  .acc-item{ background:var(--panel); border:1px solid var(--line); border-radius:14px; margin-bottom:10px; overflow:hidden; }
+  .acc-head{ padding:15px 16px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; font-weight:600; font-size:14.5px; }
+  .acc-body{ padding:0 16px 16px; color:var(--muted); font-size:13.5px; line-height:1.6; display:none; }
+  .acc-item.open .acc-body{ display:block; }
+
+  /* ---- Quiz ---- */
+  .quiz-card{ background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:20px; margin-top:10px; }
+  .quiz-opt{ display:block; width:100%; text-align:left; background:var(--panel-light); border:1.5px solid var(--line); color:var(--text); padding:13px 15px; border-radius:12px; margin-top:10px; font-size:14px; cursor:pointer; font-family:inherit; }
+  .quiz-opt.correct{ border-color:var(--mint); background:var(--mint-dim); color:var(--mint); }
+  .quiz-opt.wrong{ border-color:var(--coral); background:var(--coral-dim); color:#ffb3ac; }
+  .quiz-feedback{ margin-top:14px; font-size:13.5px; color:var(--muted); background:var(--bg); border-radius:10px; padding:12px 14px; display:none; }
+
+  /* ---- Toggle ---- */
+  .toggle-row{ display:flex; justify-content:space-between; align-items:center; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:10px; }
+  .toggle-row .t{ font-size:14px; font-weight:600; }
+  .toggle-row .d{ font-size:12px; color:var(--muted); margin-top:2px; }
+  .switch{ position:relative; width:46px; height:26px; flex-shrink:0; }
+  .switch input{ opacity:0; width:0; height:0; }
+  .slider{ position:absolute; cursor:pointer; inset:0; background:var(--line); border-radius:20px; transition:.2s; }
+  .slider:before{ content:""; position:absolute; width:20px; height:20px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.2s; }
+  input:checked + .slider{ background:var(--mint); }
+  input:checked + .slider:before{ transform:translateX(20px); }
+
+  .checklist-row{ display:flex; align-items:flex-start; gap:12px; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:10px; }
+  .checklist-row input{ margin-top:2px; width:18px; height:18px; accent-color:var(--mint); }
+  .checklist-row .t{ font-size:14px; font-weight:600; }
+  .checklist-row .d{ font-size:12px; color:var(--muted); margin-top:2px; }
+
+  .banner{ background:var(--mint-dim); border:1px solid #2a5c4f; color:var(--mint); border-radius:14px; padding:14px 16px; font-size:13px; margin-bottom:18px; line-height:1.5; }
+  .banner.warn{ background:#3a2a17; border-color:#5c4325; color:var(--amber); }
+
+  /* ---- Fake call ---- */
+  .call-screen{ position:fixed; inset:0; background:#111; z-index:100; display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:70px 30px 50px; color:#fff; text-align:center; }
+  .call-avatar{ width:110px;height:110px;border-radius:50%; background:var(--panel-light); display:flex;align-items:center;justify-content:center; font-size:40px; margin-top:20px; }
+  .call-actions{ display:flex; justify-content:space-between; width:100%; max-width:280px; }
+  .call-btn{ width:64px;height:64px;border-radius:50%; border:none; font-size:24px; display:flex;align-items:center;justify-content:center; cursor:pointer; }
+  .call-decline{ background:var(--coral); color:#fff; }
+  .call-accept{ background:var(--mint); color:#08281F; }
+
+  .helpline-row{ display:flex; align-items:center; justify-content:space-between; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:10px; }
+  .call-chip{ background:var(--mint); color:#08281F; border:none; padding:9px 16px; border-radius:20px; font-weight:700; font-size:13px; text-decoration:none; }
+
+  .empty{ text-align:center; color:var(--muted); font-size:13.5px; padding:30px 10px; }
+  .fab-add{ position:fixed; bottom:172px; right:20px; width:48px;height:48px;border-radius:50%; background:var(--mint); color:#08281F; border:none; font-size:24px; cursor:pointer; z-index:40; box-shadow:0 6px 18px rgba(0,0,0,.35); }
+
+  .discreet #app{ background:#fff; color:#111; }
+  .discreet .topbar h1{ color:#111; }
+  .discreet .panelnote{ color:#555; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ---------------- Local storage cache ----------------
+   Zero-setup demo: data is saved directly on this device using
+   localStorage. No account, no backend needed — just open and use. */
+const DEMO_KEY = 'sh_demo_data';
+let cloudData = null;
+
+/* ---------------- Feedback / App Review (Google Form) ----------------
+   Replace this with the real "Get shareable link" URL from your
+   published Google Form once you've created it (see setup instructions). */
+const FEEDBACK_FORM_URL = 'https://forms.gle/REPLACE_WITH_YOUR_FORM_LINK';
+
+function openFeedbackForm(){
+  window.open(FEEDBACK_FORM_URL, '_blank', 'noopener');
+}
+
+function loadDemoData(){
+  try{
+    const raw = localStorage.getItem(DEMO_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return { name:'', contacts:[], reports:[], privacy:{}, locationSharing:false, loginAlerts:true, discreet:false, quizBest:0 };
+}
+function saveDemoData(){
+  try{ localStorage.setItem(DEMO_KEY, JSON.stringify(cloudData)); }catch(e){}
+}
+
+function cget(key, def){ return (cloudData && cloudData[key] !== undefined) ? cloudData[key] : def; }
+function cset(key, value){
+  if(!cloudData) cloudData = {};
+  cloudData[key] = value;
+  saveDemoData();
+}
+
+/* ---------------- Router ---------------- */
+function nav(hash){ location.hash = hash; }
+window.addEventListener('hashchange', render);
+
+window.addEventListener('DOMContentLoaded', () => {
+  cloudData = loadDemoData();
+  saveDemoData();
+  if(!location.hash) location.hash = '#/home';
+  render();
+  applyDiscreet();
+});
+
+function currentUser(){
+  if(!cloudData) return null;
+  return { name: cloudData.name || 'there' };
+}
+function requireAuth(){ return !!cloudData; }
+
+/* ---------------- Shell pieces ---------------- */
+function bottomNav(active){
+  const items = [
+    {id:'home', ic:'🏠', label:'Home', hash:'#/home'},
+    {id:'learn', ic:'📚', label:'Learn', hash:'#/learn'},
+    {id:'report', ic:'📝', label:'Report', hash:'#/report'},
+    {id:'contacts', ic:'👥', label:'Contacts', hash:'#/contacts'},
+    {id:'profile', ic:'⚙️', label:'Profile', hash:'#/profile'},
+  ];
+  return `<div class="bottom-nav">${items.map(it => `
+    <button class="nav-btn ${active===it.id?'active':''}" onclick="nav('${it.hash}')">
+      <span class="nic">${it.ic}</span>${it.label}
+    </button>).join('')}</div>;
+}
+
+function fabSos(){
+  return <div class="fab-sos" onclick="nav('#/sos')"><span>SOS</span></div>;
+}
+
+function topbar(title, opts={}){
+  return `<div class="topbar">
+    <div>
+      ${opts.back ? <button class="back-btn" onclick="history.back()">←</button> : (opts.greet ? <div class="greet">${opts.greet}</div> : '')}
+      <h1>${title}</h1>
+    </div>
+    ${opts.right || ''}
+  </div>`;
+}
+
+function applyDiscreet(){
+  document.body.classList.toggle('discreet', !!cget('discreet'));
+  const t = cget('discreet') ? 'Notes' : 'SafeHer — Online Safety Companion';
+  document.title = t;
+}
+
+/* ---------------- Render dispatcher ---------------- */
+function render(){
+  const app = document.getElementById('app');
+  const route = (location.hash || '#/home').split('?')[0];
+  const routes = {
+    '#/home': screenHome, '#/sos': screenSos,
+    '#/contacts': screenContacts, '#/location': screenLocation,
+    '#/report': screenReport, '#/privacy': screenPrivacy,
+    '#/scam': screenScam, '#/learn': screenLearn,
+    '#/quiz': screenQuiz, '#/fakecall': screenFakecall,
+    '#/helplines': screenHelplines, '#/profile': screenProfile,
+    '#/account': screenAccount,
+  };
+  const fn = routes[route] || screenHome;
+  app.innerHTML = fn();
+  afterRender(route);
+}
+
+/* ================= HOME ================= */
+function screenHome(){
+  if(!requireAuth()) return '';
+  const u = currentUser();
+  const displayName = u.name && u.name.trim() ? u.name.split(' ')[0] : 'there';
+  const contacts = cget('contacts', []);
+  return `
+    ${topbar(displayName, {greet:'Good to see you'})}
+    <div class="screen" style="padding-top:0;">
+      <div class="safety-card">
+        <div class="row">
+          <div>
+            <h3>Safety status</h3>
+            <p>${contacts.length} trusted contact${contacts.length===1?'':'s'} set up · Location sharing ${cget('locationSharing')?'on':'off'}</p>
+          </div>
+          <span class="status-pill"><span class="dot"></span>Active</span>
+        </div>
+      </div>
+
+      <div class="section-title">Quick actions</div>
+      <div class="grid2">
+        <a class="tile" onclick="nav('#/location')"><span class="ic">📍</span><span class="lbl">Location Privacy</span><span class="sub">Control who sees you</span></a>
+        <a class="tile" onclick="nav('#/account')"><span class="ic">🔐</span><span class="lbl">Secure Account</span><span class="sub">Login &amp; device checks</span></a>
+        <a class="tile" onclick="nav('#/scam')"><span class="ic">⚠️</span><span class="lbl">Scam Detector</span><span class="sub">Spot suspicious messages</span></a>
+        <a class="tile" onclick="nav('#/privacy')"><span class="ic">🔒</span><span class="lbl">Data Protection</span><span class="sub">Privacy checklist</span></a>
+        <a class="tile" onclick="nav('#/fakecall')"><span class="ic">📞</span><span class="lbl">Fake Call</span><span class="sub">Exit a situation fast</span></a>
+        <a class="tile" onclick="nav('#/helplines')"><span class="ic">☎️</span><span class="lbl">Helplines</span><span class="sub">Verified numbers</span></a>
+      </div>
+
+      <div class="section-title">Keep learning</div>
+      <div class="list-row" onclick="nav('#/quiz')">
+        <div class="main"><div class="t">Take today's safety quiz</div><div class="d">Best score: ${cget('quizBest',0)}/5</div></div>
+        <span class="chev">›</span>
+      </div>
+
+      <div class="list-row" onclick="openFeedbackForm()">
+        <div class="main"><div class="t">Give Feedback / Review App</div><div class="d">Tell us what's working, in a 2-min form</div></div>
+        <span class="chev">›</span>
+      </div>
+    </div>
+    ${fabSos()}
+    ${bottomNav('home')}
+  `;
+}
+
+/* ================= SOS ================= */
+let sosHoldTimer = null;
+function screenSos(){
+  if(!requireAuth()) return '';
+  return `
+    ${topbar('Emergency SOS', {back:true})}
+    <div class="sos-screen">
+      <p style="color:var(--muted); font-size:14px; max-width:280px;">Press and hold the button for 2 seconds to alert your trusted contacts with your live location.</p>
+      <div class="sos-ring" id="sosRing"
+        onmousedown="startSos()" onmouseup="cancelSos()" onmouseleave="cancelSos()"
+        ontouchstart="startSos()" ontouchend="cancelSos()">
+        <span>HOLD</span><small>for SOS</small>
+      </div>
+      <div id="sosResult"></div>
+      <button class="btn btn-outline" style="max-width:280px;" onclick="nav('#/home')">Cancel and go back</button>
+    </div>
+  `;
+}
+function startSos(){
+  const ring = document.getElementById('sosRing');
+  ring.style.boxShadow = "0 0 0 10px rgba(255,90,78,.35), 0 0 0 26px rgba(255,90,78,.18)";
+  sosHoldTimer = setTimeout(triggerSos, 1400);
+}
+function cancelSos(){
+  clearTimeout(sosHoldTimer);
+  const ring = document.getElementById('sosRing');
+  if(ring) ring.style.boxShadow = "0 0 0 10px rgba(255,90,78,.15), 0 0 0 22px rgba(255,90,78,.08)";
+}
+function triggerSos(){
+  const contacts = cget('contacts', []);
+  document.getElementById('sosRing').innerHTML = <span class="check">✅</span><small>Alert ready</small>;
+  if(!contacts.length){
+    document.getElementById('sosResult').innerHTML = <div class="banner warn" style="margin-top:24px;">No trusted contacts saved yet. <a onclick="nav('#/contacts')" style="color:var(--mint); cursor:pointer; text-decoration:underline;">Add contacts</a> first so SOS has someone to alert.</div>;
+    return;
+  }
+  document.getElementById('sosResult').innerHTML = <div class="banner" style="margin-top:24px;">Getting your location…</div>;
+  if(!window.isSecureContext){
+    renderSosActions(contacts, null, 'Location needs a secure (https://) page. This page is loaded as "' + location.protocol + '", so the browser blocks location access here — try opening the published https link instead.');
+    return;
+  }
+  if('geolocation' in navigator){
+    navigator.geolocation.getCurrentPosition(
+      pos => renderSosActions(contacts, https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}),
+      err => {
+        const reasons = {1:'Location permission was denied — check site/app permissions.', 2:'Position unavailable (GPS/network location off?).', 3:'Location request timed out.'};
+        renderSosActions(contacts, null, reasons[err.code] || err.message);
+      },
+      {timeout:10000, enableHighAccuracy:true, maximumAge:0}
+    );
+  } else {
+    renderSosActions(contacts, null, 'This browser has no geolocation support.');
+  }
+}
+function renderSosActions(contacts, mapsLink, locError){
+  const msgBase = "SOS! I need help." + (mapsLink ? ` My live location: ${mapsLink}` : " (location unavailable — please call me)");
+  const text = encodeURIComponent(msgBase);
+  const rows = contacts.map(c=>{
+    const digits = c.phone.replace(/[^0-9]/g,'');
+    return `
+      <div class="list-row" style="cursor:default;">
+        <div class="main"><div class="t">${c.name}</div><div class="d">${c.phone}</div></div>
+        <a class="call-chip" style="background:var(--mint);" href="https://wa.me/${digits}?text=${text}" target="_blank" rel="noopener">WhatsApp</a>
+        <a class="call-chip" style="margin-left:8px;" href="sms:${c.phone}?body=${text}">SMS</a>
+      </div>`;
+  }).join('');
+  document.getElementById('sosResult').innerHTML = `
+    <div class="banner${locError ? ' warn' : ''}" style="margin-top:24px; text-align:left;">${locError ? locError + ' Sharing without location for now — ' : ''}Tap WhatsApp or SMS next to each contact to actually send the alert${mapsLink ? ' with your live location' : ''}. The app opens it pre-filled — you just tap Send once.</div>
+    ${rows}`;
+}
+
+/* ================= CONTACTS ================= */
+function screenContacts(){
+  if(!requireAuth()) return '';
+  const contacts = cget('contacts', []);
+  return `
+    ${topbar('Trusted Contacts', {back:true})}
+    <div class="screen">
+      <div class="banner">These people are alerted first when you trigger SOS. Add 2–3 people you trust.</div>
+      ${contacts.length ? contacts.map((c,i)=>`
+        <div class="list-row">
+          <div class="main"><div class="t">${c.name}</div><div class="d">${c.phone}</div></div>
+          <a class="call-chip" href="tel:${c.phone}">Call</a>
+          <span class="chev" style="margin-left:10px; cursor:pointer;" onclick="removeContact(${i})">✕</span>
+        </div>).join('') : `<div class="empty">No trusted contacts yet. Tap + to add your first one.</div>}
+    </div>
+    <button class="fab-add" onclick="addContactPrompt()">+</button>
+    ${bottomNav('contacts')}
+  `;
+}
+function addContactPrompt(){
+  const name = prompt("Contact's name:");
+  if(!name) return;
+  const phone = prompt("Contact's phone number:");
+  if(!phone) return;
+  const contacts = cget('contacts', []);
+  contacts.push({name, phone});
+  cset('contacts', contacts);
+  render();
+}
+function removeContact(i){
+  const contacts = cget('contacts', []);
+  contacts.splice(i,1);
+  cset('contacts', contacts);
+  render();
+}
+
+/* ================= LOCATION PRIVACY ================= */
+function screenLocation(){
+  if(!requireAuth()) return '';
+  const sharing = cget('locationSharing');
+  return `
+    ${topbar('Location Privacy', {back:true})}
+    <div class="screen">
+      <div class="toggle-row">
+        <div><div class="t">Share live location</div><div class="d">Only with your trusted contacts, and only during SOS</div></div>
+        <label class="switch"><input type="checkbox" ${sharing?'checked':''} onchange="toggleLocation(this)"><span class="slider"></span></label>
+      </div>
+      <div class="banner warn">Think before sharing your location in public posts or stories — it can reveal home, work or routine patterns to strangers.</div>
+      <div class="section-title">Apps with location access (demo)</div>
+      ${['Maps','Weather','Camera','Food Delivery'].map(a=>`
+        <div class="list-row"><div class="main"><div class="t">${a}</div><div class="d">While using the app</div></div><span class="chev">›</span></div>
+      `).join('')}
+    </div>
+    ${bottomNav('home')}
+  `;
+}
+function toggleLocation(el){ cset('locationSharing', el.checked); render(); }
+
+/* ================= HARASSMENT REPORTING ================= */
+function screenReport(){
+  if(!requireAuth()) return '';
+  const reports = cget('reports', []);
+  return `
+    ${topbar('Report Harassment', {back:true})}
+    <div class="screen">
+      <div class="banner">Save evidence before blocking or deleting a conversation — screenshots and message text help if you report to the platform or police later.</div>
+      <label>What happened?</label>
+      <textarea id="rp-note" placeholder="Describe the message, account or situation..."></textarea>
+      <label>Platform</label>
+      <select id="rp-platform">
+        <option>Instagram</option><option>WhatsApp</option><option>Facebook</option>
+        <option>X (Twitter)</option><option>Snapchat</option><option>Other</option>
+      </select>
+      <button class="btn btn-danger" onclick="saveReport()">Save this record</button>
+
+      <div class="section-title">Your saved records</div>
+      ${reports.length ? reports.map((r,i)=>`
+        <div class="list-row"><div class="main"><div class="t">${r.platform}</div><div class="d">${r.note.slice(0,50)}${r.note.length>50?'…':''} · ${r.date}</div></div>
+        <span class="chev" onclick="removeReport(${i})">✕</span></div>
+      ).join('') : `<div class="empty">Nothing saved yet.</div>}
+
+      <div class="section-title">Where to report</div>
+      <div class="acc-item"><div class="acc-head" onclick="toggleAcc(this)">Instagram / Facebook<span>+</span></div>
+        <div class="acc-body">Use the in-app "Report" on the profile or message, then choose Harassment or Bullying. Meta reviews reports and can restrict or remove accounts.</div></div>
+      <div class="acc-item"><div class="acc-head" onclick="toggleAcc(this)">WhatsApp<span>+</span></div>
+        <div class="acc-body">Open the chat → tap the contact name → Report and Block. Forwarding evidence to WhatsApp's support before blocking helps their review.</div></div>
+      <div class="acc-item"><div class="acc-head" onclick="toggleAcc(this)">Cyber Crime (India)<span>+</span></div>
+        <div class="acc-body">File a complaint at cybercrime.gov.in or call the national cyber helpline 1930 for serious harassment, stalking or blackmail.</div></div>
+    </div>
+    ${bottomNav('report')}
+  `;
+}
+function saveReport(){
+  const note = document.getElementById('rp-note').value.trim();
+  const platform = document.getElementById('rp-platform').value;
+  if(!note){ alert('Please describe what happened first.'); return; }
+  const reports = cget('reports', []);
+  reports.unshift({note, platform, date: new Date().toLocaleDateString()});
+  cset('reports', reports);
+  render();
+}
+function removeReport(i){
+  const reports = cget('reports', []);
+  reports.splice(i,1);
+  cset('reports', reports);
+  render();
+}
+function toggleAcc(el){ el.parentElement.classList.toggle('open'); }
+
+/* ================= PERSONAL DATA PROTECTION ================= */
+const PRIVACY_ITEMS = [
+  {id:'phone', t:'Hide phone number from public profiles', d:'Visible only to contacts, not the public'},
+  {id:'address', t:'Never post home or workplace address', d:'Even tagged locations can reveal a pattern'},
+  {id:'photos', t:'Turn off location metadata on shared photos', d:'Photos can carry hidden GPS data'},
+  {id:'strangers', t:'Review and remove unknown followers', d:'Periodically audit who can see your posts'},
+  {id:'apps', t:'Check which apps can access your contacts', d:'Revoke access for apps you no longer use'},
+];
+function screenPrivacy(){
+  if(!requireAuth()) return '';
+  const state = cget('privacy', {});
+  const done = PRIVACY_ITEMS.filter(i=>state[i.id]).length;
+  return `
+    ${topbar('Data Protection', {back:true})}
+    <div class="screen">
+      <div class="banner">${done}/${PRIVACY_ITEMS.length} checklist items done. Small habits reduce how easily someone can find or misuse your details.</div>
+      ${PRIVACY_ITEMS.map(i=>`
+        <div class="checklist-row">
+          <input type="checkbox" ${state[i.id]?'checked':''} onchange="togglePrivacy('${i.id}', this)">
+          <div><div class="t">${i.t}</div><div class="d">${i.d}</div></div>
+        </div>
+      `).join('')}
+      <button class="btn btn-outline" onclick="if(confirm('Reset all app data on this install? This cannot be undone.')) resetAppData();">Delete my data from this device</button>
+    </div>
+    ${bottomNav('home')}
+  `;
+}
+function togglePrivacy(id, el){
+  const state = cget('privacy', {});
+  state[id] = el.checked;
+  cset('privacy', state);
+  render();
+}
+/* ================= SCAM DETECTOR ================= */
+const SCAM_EXAMPLES = [
+  {msg:"Hi, this is your bank. Your account is blocked. Share the OTP you just received to unblock it immediately.", scam:true, why:"Banks never ask for OTPs over call or message. This is a classic account-takeover scam."},
+  {msg:"Hey, it's mom, I'm using a friend's phone, mine broke. Can you send money to this number urgently?", scam:true, why:"A sudden new number plus urgency is a common impersonation scam — verify by calling the known number directly."},
+  {msg:"Reminder: your dentist appointment is tomorrow at 4 PM. Reply CONFIRM or RESCHEDULE.", scam:false, why:"Routine, expected, no request for money, OTP or personal details — low risk."},
+  {msg:"Congratulations! You've won a lottery you never entered. Click this link and pay a small fee to claim ₹50,000.", scam:true, why:"You can't win a lottery you never entered, and legitimate prizes never require an upfront fee."},
+];
+function screenScam(){
+  if(!requireAuth()) return '';
+  return `
+    ${topbar('Scam & Phishing Detector', {back:true})}
+    <div class="screen">
+      <div class="banner">Read each message and decide: does it look safe, or suspicious? Tap your answer for an instant explanation.</div>
+      ${SCAM_EXAMPLES.map((ex,i)=>`
+        <div class="quiz-card">
+          <div style="font-size:14px; line-height:1.5;">"${ex.msg}"</div>
+          <button class="quiz-opt" onclick="answerScam(${i}, false, this)">✅ Looks safe</button>
+          <button class="quiz-opt" onclick="answerScam(${i}, true, this)">⚠️ Looks suspicious</button>
+          <div class="quiz-feedback" id="sc-fb-${i}"></div>
+        </div>
+      `).join('')}
+    </div>
+    ${bottomNav('home')}
+  `;
+}
+function answerScam(i, guessedScam, btn){
+  const ex = SCAM_EXAMPLES[i];
+  const correct = guessedScam === ex.scam;
+  const card = btn.parentElement;
+  card.querySelectorAll('.quiz-opt').forEach(b=>b.disabled=true);
+  btn.classList.add(correct ? 'correct' : 'wrong');
+  const fb = card.querySelector('.quiz-feedback');
+  fb.style.display='block';
+  fb.textContent = (correct ? "Correct — " : "Not quite — ") + ex.why;
+}
+
+/* ================= LEARNING CENTER ================= */
+const LESSONS = [
+  {t:"Password hygiene", d:"Use a unique password for every important account, made of an unrelated phrase rather than a real word. A password manager remembers them so you don't have to reuse the same one everywhere."},
+  {t:"Social media privacy", d:"Set profiles to private, review your follower list periodically, and turn off location tagging on posts. Assume anything public can be screenshotted and shared beyond your control."},
+  {t:"Cyberbullying", d:"Don't engage with a harasser directly. Screenshot the evidence, block the account, and report it on the platform. Talk to someone you trust — you're not overreacting by taking it seriously."},
+  {t:"Phishing links", d:'Hover or long-press a link before tapping — check the actual domain, not just the display text. Urgency ("act now or lose access") is the biggest red flag of a phishing attempt.'},
+  {t:"Image & privacy risks", d:"Once an image is sent, you lose control of where it goes. Be cautious sharing anything you wouldn't want a stranger to see, even with someone you trust today."},
+  {t:"Account security basics", d:'Turn on two-factor authentication wherever it\'s offered, review "log in from unfamiliar device" alerts immediately, and log out of shared or public devices every time.'},
+];
+function screenLearn(){
+  if(!requireAuth()) return '';
+  return `
+    ${topbar('Safety Learning Center', {back:true})}
+    <div class="screen">
+      ${LESSONS.map(l=>`
+        <div class="acc-item"><div class="acc-head" onclick="toggleAcc(this)">${l.t}<span>+</span></div>
+        <div class="acc-body">${l.d}</div></div>
+      `).join('')}
+      <div class="list-row" onclick="nav('#/quiz')" style="margin-top:16px;">
+        <div class="main"><div class="t">Test what you've learned</div><div class="d">5-question interactive quiz</div></div>
+        <span class="chev">›</span>
+      </div>
+    </div>
+    ${bottomNav('learn')}
+  `;
+}
+
+/* ================= INTERACTIVE QUIZ ================= */
+const QUIZ = [
+  {q:"Someone you don't know sends you a suspicious link claiming you won a prize. What do you do?", opts:["Click to see what it is","Don't click, and delete or report the message","Reply asking who they are"], correct:1, why:"Never click unknown links — even opening them can expose your device or confirm your number is active."},
+  {q:"A stranger asks for your home address 'just to be friends'. Best response?", opts:["Share it, they seem nice","Politely decline and don't share personal location details","Give a fake address"], correct:1, why:"You never owe strangers your personal details online, no matter how friendly the conversation feels."},
+  {q:"You get a call saying it's your bank and they need your OTP to 'verify' you. What's safest?", opts:["Share the OTP quickly, it's urgent","Hang up and call your bank's official number yourself","Share half the OTP"], correct:1, why:"Banks never call asking for OTPs. Always verify independently using a number you already trust."},
+  {q:"An ex-partner keeps messaging after you've asked them to stop. What helps most?", opts:["Keep replying to make them stop","Block, screenshot the messages first, and tell someone you trust","Ignore it and hope it stops"], correct:1, why:"Documenting evidence before blocking protects you if you need to report it later, and support matters."},
+  {q:"You notice a login alert from a device you don't recognize. First step?", opts:["Ignore it, probably nothing","Change your password and log out of all devices","Wait and see if it happens again"], correct:1, why:"Acting immediately — changing password and forcing logout — limits how much an intruder can do."},
+];
+let quizState = {i:0, score:0};
+function screenQuiz(){
+  if(!requireAuth()) return '';
+  quizState = {i:0, score:0};
+  return ${topbar('Interactive Safety Quiz', {back:true})}<div class="screen" id="quizArea"></div>${bottomNav('learn')};
+}
+function renderQuizStep(){
+  const area = document.getElementById('quizArea');
+  if(!area) return;
+  if(quizState.i >= QUIZ.length){
+    cset('quizBest', Math.max(cget('quizBest',0), quizState.score));
+    area.innerHTML = `
+      <div class="quiz-card" style="text-align:center;">
+        <h3>Score: ${quizState.score} / ${QUIZ.length}</h3>
+        <p style="color:var(--muted); font-size:13.5px;">${quizState.score===QUIZ.length ? "Perfect — you know your safety basics well." : "Review the Learning Center to sharpen a few areas."}</p>
+        <button class="btn btn-primary" onclick="nav('#/quiz'); setTimeout(renderQuizStep,10);">Retake quiz</button>
+        <button class="btn btn-outline" onclick="nav('#/home')">Back to home</button>
+      </div>`;
+    return;
+  }
+  const item = QUIZ[quizState.i];
+  area.innerHTML = `
+    <div class="quiz-card">
+      <div style="color:var(--muted); font-size:12px; margin-bottom:6px;">Question ${quizState.i+1} of ${QUIZ.length}</div>
+      <div style="font-weight:600; font-size:15px; line-height:1.4;">${item.q}</div>
+      ${item.opts.map((o,idx)=><button class="quiz-opt" onclick="answerQuiz(${idx}, this)">${o}</button>).join('')}
+      <div class="quiz-feedback" id="quiz-fb"></div>
+    </div>`;
+}
+function answerQuiz(idx, btn){
+  const item = QUIZ[quizState.i];
+  const card = btn.parentElement;
+  card.querySelectorAll('.quiz-opt').forEach((b,i2)=>{
+    b.disabled = true;
+    if(i2===item.correct) b.classList.add('correct');
+    else if(i2===idx) b.classList.add('wrong');
+  });
+  if(idx===item.correct) quizState.score++;
+  const fb = card.querySelector('#quiz-fb');
+  fb.style.display = 'block';
+  fb.textContent = item.why;
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'btn btn-primary';
+  nextBtn.textContent = (quizState.i === QUIZ.length-1) ? 'See results' : 'Next question';
+  nextBtn.onclick = () => { quizState.i++; renderQuizStep(); };
+  card.appendChild(nextBtn);
+}
+
+/* ================= FAKE CALL ================= */
+function screenFakecall(){
+  if(!requireAuth()) return '';
+  return `
+    ${topbar('Fake Call', {back:true})}
+    <div class="screen">
+      <div class="banner">Trigger a fake incoming call to give yourself a reason to leave an uncomfortable situation.</div>
+      <label>Caller name to show</label>
+      <input id="fc-name" type="text" placeholder="e.g. Mumma" value="Mumma">
+      <label>Ring after</label>
+      <select id="fc-delay"><option value="3">3 seconds</option><option value="10" selected>10 seconds</option><option value="30">30 seconds</option></select>
+      <button class="btn btn-danger" onclick="startFakeCall()">Start fake call</button>
+    </div>
+    ${bottomNav('home')}
+  `;
+}
+function startFakeCall(){
+  const name = document.getElementById('fc-name').value.trim() || 'Mumma';
+  const delay = parseInt(document.getElementById('fc-delay').value,10)*1000;
+  document.body.insertAdjacentHTML('beforeend', <div style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel);padding:10px 18px;border-radius:20px;z-index:60;font-size:13px;">Calling in ${delay/1000}s…</div>);
+  setTimeout(()=>showIncomingCall(name), delay);
+}
+function showIncomingCall(name){
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="call-screen" id="fakeCallUI">
+      <div>
+        <div style="font-size:13px; color:#aaa;">Incoming call</div>
+        <div class="call-avatar">👤</div>
+        <h2 style="margin:16px 0 2px;">${name}</h2>
+        <div style="color:#aaa; font-size:13px;">mobile</div>
+      </div>
+      <div class="call-actions">
+        <button class="call-btn call-decline" onclick="document.getElementById('fakeCallUI').remove()">✕</button>
+        <button class="call-btn call-accept" onclick="acceptFakeCall()">✓</button>
+      </div>
+    </div>`);
+}
+function acceptFakeCall(){
+  document.getElementById('fakeCallUI').innerHTML = `
+    <div><div style="font-size:13px;color:#aaa;">On call</div><div class="call-avatar">👤</div><h2 style="margin:16px 0 2px;">Call in progress…</h2></div>
+    <button class="call-btn call-decline" style="margin:0 auto;" onclick="document.getElementById('fakeCallUI').remove()">✕ End</button>`;
+}
+
+/* ================= HELPLINES ================= */
+const HELPLINES = [
+  {name:'Police', num:'100', d:'Emergency police response'},
+  {name:'National Emergency Number', num:'112', d:'All-in-one emergency helpline'},
+  {name:'Women Helpline (India)', num:'1091', d:'24x7 support for women in distress'},
+  {name:'Cyber Crime Helpline', num:'1930', d:'Report online fraud, harassment, stalking'},
+  {name:'Domestic Abuse Helpline', num:'181', d:'Support and shelter information'},
+  {name:'Childline (under 18)', num:'1098', d:'For minors facing abuse or danger'},
+];
+function screenHelplines(){
+  if(!requireAuth()) return '';
+  return `
+    ${topbar('Helpline Directory', {back:true})}
+    <div class="screen">
+      ${HELPLINES.map(h=>`
+        <div class="helpline-row">
+          <div class="main"><div class="t">${h.name}</div><div class="d">${h.d}</div></div>
+          <a class="call-chip" href="tel:${h.num}">${h.num}</a>
+        </div>
+      `).join('')}
+    </div>
+    ${bottomNav('home')}
+  `;
+}
+
+/* ================= SECURE ACCOUNT ================= */
+function screenAccount(){
+  if(!requireAuth()) return '';
+  const alerts = cget('loginAlerts');
+  return `
+    ${topbar('Secure Account', {back:true})}
+    <div class="screen">
+      <div class="toggle-row">
+        <div><div class="t">Login alerts</div><div class="d">Notify me when a new device logs in</div></div>
+        <label class="switch"><input type="checkbox" ${alerts?'checked':''} onchange="cset('loginAlerts', this.checked); render();"><span class="slider"></span></label>
+      </div>
+      <div class="list-row" onclick="alert('Demo: password updated.')">
+        <div class="main"><div class="t">Change password</div><div class="d">Use a unique, unrelated phrase</div></div><span class="chev">›</span>
+      </div>
+      <div class="list-row" onclick="alert('Demo: MFA / passkey setup would open here.')">
+        <div class="main"><div class="t">Two-factor authentication</div><div class="d">Not yet enabled</div></div><span class="chev">›</span>
+      </div>
+      <div class="list-row" onclick="if(confirm('Log out of all devices?')) alert('Demo: logged out everywhere.')">
+        <div class="main"><div class="t">Log out of all devices</div><div class="d">Ends every active session but this one</div></div><span class="chev">›</span>
+      </div>
+    </div>
+    ${bottomNav('home')}
+  `;
+}
+
+/* ================= PROFILE / SETTINGS ================= */
+function screenProfile(){
+  if(!requireAuth()) return '';
+  const u = currentUser();
+  const discreet = cget('discreet');
+  return `
+    ${topbar('Profile', {back:true})}
+    <div class="screen">
+      <div class="banner">No login needed — everything is saved right on this device. Nothing leaves your phone.</div>
+      <label>Your name (optional, shown on Home)</label>
+      <input id="pf-name" type="text" placeholder="e.g. Mayuri" value="${cget('name','')}">
+      <button class="btn btn-outline" style="margin-top:12px;" onclick="cset('name', document.getElementById('pf-name').value.trim()); render();">Save name</button>
+
+      <div class="section-title">Settings</div>
+      <div class="toggle-row">
+        <div><div class="t">Discreet mode</div><div class="d">Makes the app look like a plain notes app</div></div>
+        <label class="switch"><input type="checkbox" ${discreet?'checked':''} onchange="cset('discreet', this.checked); applyDiscreet(); render();"><span class="slider"></span></label>
+      </div>
+      <div class="list-row" onclick="nav('#/contacts')"><div class="main"><div class="t">Trusted contacts</div><div class="d">${cget('contacts',[]).length} added</div></div><span class="chev">›</span></div>
+      <div class="list-row" onclick="nav('#/privacy')"><div class="main"><div class="t">Data protection checklist</div><div class="d">Review your privacy habits</div></div><span class="chev">›</span></div>
+      <div class="list-row" onclick="openFeedbackForm()"><div class="main"><div class="t">Give Feedback / Review App</div><div class="d">Opens a short Google Form in a new tab</div></div><span class="chev">›</span></div>
+      <button class="btn btn-outline" style="margin-top:20px;" onclick="if(confirm('Reset all app data on this install? This cannot be undone.')) resetAppData();">Reset app data</button>
+    </div>
+    ${bottomNav('profile')}
+  `;
+}
+function resetAppData(){
+  const fresh = { name:'', contacts:[], reports:[], privacy:{}, locationSharing:false, loginAlerts:true, discreet:false, quizBest:0 };
+  cloudData = fresh;
+  saveDemoData();
+  applyDiscreet();
+  nav('#/home');
+}
+
+/* ---------------- After render hooks ---------------- */
+function afterRender(route){
+  if(route === '#/quiz') renderQuizStep();
+  window.scrollTo(0,0);
+}
+
+/* ---------------- Register service worker ---------------- */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
